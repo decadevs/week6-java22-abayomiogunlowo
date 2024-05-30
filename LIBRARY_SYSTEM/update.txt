@@ -1,0 +1,105 @@
+Key Changes:
+Stream API and Method References:
+
+Utilized the Stream API for filtering, collecting, and sorting requests and books.
+Used method references for collecting book information.
+Lambda Expressions:
+
+Replaced anonymous comparator classes with lambda expressions for sorting requests.
+Functional Programming:
+
+Employed functional programming concepts to enhance code readability and maintainability.
+With these changes, the code is now more concise and leverages Java's functional programming capabilities effectively.
+
+
+
+
+Stream API Usage
+1. Grouping Requests by Genre:
+java
+Copy code
+Map<Genre, List<Request>> requestsByGenre = requests.stream()
+    .collect(Collectors.groupingBy(request -> findBookById(request.getBookId(), books).getGenre()));
+Stream API: requests.stream() creates a stream from the list of requests.
+Lambda Expression: request -> findBookById(request.getBookId(), books).getGenre() is used to classify requests based on the genre of the book they refer to.
+Collectors.groupingBy: Groups the requests into a map based on the genre.
+
+2. Filtering and Collecting Educational Books:
+java
+Copy code
+Map<Integer, Book> educationalBooks = books.stream()
+    .filter(book -> book.getGenre() == Genre.EDUCATIONAL)
+    .collect(Collectors.toMap(Book::getBookId, Function.identity()));
+Stream API: books.stream() creates a stream from the list of books.
+Lambda Expression: book -> book.getGenre() == Genre.EDUCATIONAL filters the books to include only educational ones.
+Method References: Book::getBookId and Function.identity() are used to create a map where the key is the book ID and the value is the book itself.
+
+3. Sorting Requests Based on Priority:
+java
+Copy code
+requestList.stream()
+    .sorted((r1, r2) -> compare(r1.getPerson(), getTitleById(r1.getBookId(), books),
+                                r2.getPerson(), getTitleById(r2.getBookId(), books)))
+    .forEach(request -> {
+        Book book = educationalBooks.get(request.getBookId());
+        if (book != null && book.getCopies() > 0) {
+            book.borrowBook();
+            System.out.println(request.getPerson().getName() + " borrowed " + book.getTitle());
+        }
+    });
+Stream API: requestList.stream() creates a stream from the list of requests.
+Lambda Expression: (r1, r2) -> compare(r1.getPerson(), getTitleById(r1.getBookId(), books), r2.getPerson(), getTitleById(r2.getBookId(), books)) sorts the requests based on priority.
+forEach: Iterates over each sorted request to process the book borrowing.
+
+4. Filtering and Collecting Fiction Books:
+java
+Copy code
+Map<Integer, Book> fictionBooks = books.stream()
+    .filter(book -> book.getGenre() == Genre.FICTION)
+    .collect(Collectors.toMap(Book::getBookId, Function.identity()));
+Stream API: books.stream() creates a stream from the list of books.
+Lambda Expression: book -> book.getGenre() == Genre.FICTION filters the books to include only fiction ones.
+Method References: Book::getBookId and Function.identity() are used to create a map where the key is the book ID and the value is the book itself.
+
+5. Processing Requests Based on FIFO:
+java
+Copy code
+requestList.forEach(request -> {
+    Book book = fictionBooks.get(request.getBookId());
+    if (book != null && book.getCopies() > 0) {
+        book.borrowBook();
+        System.out.println(request.getPerson().getName() + " borrowed " + book.getTitle());
+    }
+});
+forEach: Iterates over each request in the list to process the book borrowing.
+Additional Helper Methods Using Stream API
+
+6. Finding a Book by ID:
+java
+Copy code
+private Book findBookById(int bookId, List<Book> books) {
+    return books.stream()
+        .filter(book -> book.getBookId() == bookId)
+        .findFirst()
+        .orElse(null);
+}
+Stream API: books.stream() creates a stream from the list of books.
+Lambda Expression: book -> book.getBookId() == bookId filters the books to find the one with the matching ID.
+findFirst: Finds the first matching book.
+orElse: Returns null if no book is found.
+
+7. Getting the Title of a Book by ID:
+java
+Copy code
+private String getTitleById(int bookId, List<Book> books) {
+    return books.stream()
+        .filter(book -> book.getBookId() == bookId)
+        .map(Book::getTitle)
+        .findFirst()
+        .orElse(null);
+}
+Stream API: books.stream() creates a stream from the list of books.
+Lambda Expression: book -> book.getBookId() == bookId filters the books to find the one with the matching ID.
+Method Reference: Book::getTitle is used to get the title of the book.
+findFirst: Finds the first matching book.
+orElse: Returns null if no book is found.

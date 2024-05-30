@@ -2,27 +2,22 @@ package service.impl;
 
 import enums.Genre;
 import model.Book;
-import model.Person;
+import model.User;
 import service.LibraryService;
+import main.LibraryApp.Request; // Correct import
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class LibraryServiceImpl implements LibraryService {
     @Override
     public void processRequest(List<Book> books, List<Request> requests) {
-        Queue<LibraryApp.Request> educationalRequests = new LinkedList<>();
-        List<LibraryApp.Request> fictionRequests = new ArrayList<>();
+        Map<Genre, List<Request>> requestsByGenre = requests.stream()
+                .collect(Collectors.groupingBy(request -> findBookById(request.getBookId(), books).getGenre()));
 
-        for (LibraryApp.Request request : requests) {
-            Book book = findBookById(request.getBookId(), books);
-            if (book != null) {
-                if (book.getGenre() == Genre.EDUCATIONAL) {
-                    educationalRequests.add(request);
-                } else if (book.getGenre() == Genre.FICTION) {
-                    fictionRequests.add(request);
-                }
-            }
-        }
+        List<Request> educationalRequests = requestsByGenre.getOrDefault(Genre.EDUCATIONAL, Collections.emptyList());
+        List<Request> fictionRequests = requestsByGenre.getOrDefault(Genre.FICTION, Collections.emptyList());
 
         System.out.println("Handling Educational Requests Based on Priority:");
         requestBasedOnPriority(educationalRequests, books);
@@ -31,59 +26,39 @@ public class LibraryServiceImpl implements LibraryService {
         requestBasedOnFIFO(fictionRequests, books);
     }
 
-    @Override
-    public void requestBasedOnPriority(Queue<LibraryApp.Request> requestQueue, List<Book> books) {
-        PriorityQueue<LibraryApp.Request> priorityQueue = new PriorityQueue<>(
-                (r1, r2) -> compare(r1.getPerson(), getTitleById(r1.getBookId(), books),
-                        r2.getPerson(), getTitleById(r2.getBookId(), books))
-        );
+    private void requestBasedOnPriority(List<Request> requestList, List<Book> books) {
+        Map<Integer, Book> educationalBooks = books.stream()
+                .filter(book -> book.getGenre() == Genre.EDUCATIONAL)
+                .collect(Collectors.toMap(Book::getBookId, Function.identity()));
 
-        Map<Integer, Book> bookMap = new HashMap<>();
-        for (Book book : books) {
-            if (book.getGenre() == Genre.EDUCATIONAL) {
-                bookMap.put(book.getBookId(), book);
-            }
-        }
-
-        priorityQueue.addAll(requestQueue);
-
-        Set<Person> processedPersons = new HashSet<>();
-        while (!priorityQueue.isEmpty()) {
-            LibraryApp.Request request = priorityQueue.poll();
-            Person person = request.getPerson();
-            if (processedPersons.contains(person)) {
-                continue;
-            }
-
-            Book book = bookMap.get(request.getBookId());
-            if (book != null && book.getCopies() > 0) {
-                book.borrowBook();
-                System.out.println(person.getName() + " borrowed " + book.getTitle());
-                processedPersons.add(person);
-            }
-        }
+        requestList.stream()
+                .sorted((r1, r2) -> compare(r1.getPerson(), getTitleById(r1.getBookId(), books),
+                        r2.getPerson(), getTitleById(r2.getBookId(), books)))
+                .forEach(request -> {
+                    Book book = educationalBooks.get(request.getBookId());
+                    if (book != null && book.getCopies() > 0) {
+                        book.borrowBook();
+                        System.out.println(request.getPerson().getName() + " borrowed " + book.getTitle());
+                    }
+                });
     }
 
-    @Override
-    public void requestBasedOnFIFO(List<LibraryApp.Request> requestList, List<Book> books) {
-        Map<Integer, Book> bookMap = new HashMap<>();
-        for (Book book : books) {
-            if (book.getGenre() == Genre.FICTION) {
-                bookMap.put(book.getBookId(), book);
-            }
-        }
+    private void requestBasedOnFIFO(List<Request> requestList, List<Book> books) {
+        Map<Integer, Book> fictionBooks = books.stream()
+                .filter(book -> book.getGenre() == Genre.FICTION)
+                .collect(Collectors.toMap(Book::getBookId, Function.identity()));
 
-        for (LibraryApp.Request request : requestList) {
-            Book book = bookMap.get(request.getBookId());
+        requestList.forEach(request -> {
+            Book book = fictionBooks.get(request.getBookId());
             if (book != null && book.getCopies() > 0) {
                 book.borrowBook();
                 System.out.println(request.getPerson().getName() + " borrowed " + book.getTitle());
             }
-        }
+        });
     }
 
     @Override
-    public int compare(Person p1, String bookTitle1, Person p2, String bookTitle2) {
+    public int compare(User p1, String bookTitle1, User p2, String bookTitle2) {
         // Check if one is a teacher and the other is not
         if (p1.isTeacher() && !p2.isTeacher()) {
             return -1;
@@ -101,16 +76,17 @@ public class LibraryServiceImpl implements LibraryService {
     }
 
     private Book findBookById(int bookId, List<Book> books) {
-        for (Book book : books) {
-            if (book.getBookId() == bookId) {
-                return book;
-            }
-        }
-        return null;
+        return books.stream()
+                .filter(book -> book.getBookId() == bookId)
+                .findFirst()
+                .orElse(null);
     }
 
     private String getTitleById(int bookId, List<Book> books) {
-        Book book = findBookById(bookId, books);
-        return (book != null) ? book.getTitle() : null;
+        return books.stream()
+                .filter(book -> book.getBookId() == bookId)
+                .map(Book::getTitle)
+                .findFirst()
+                .orElse(null);
     }
 }

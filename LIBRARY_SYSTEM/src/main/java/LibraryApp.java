@@ -1,6 +1,8 @@
+package main;
+
 import enums.Genre;
 import model.Book;
-import model.Person;
+import model.User;
 import service.LibraryService;
 import service.impl.LibraryServiceImpl;
 
@@ -17,12 +19,12 @@ public class LibraryApp {
 
         // Create some people with book IDs they want to borrow
         List<Request> requests = new ArrayList<>();
-        requests.add(new Request(new Person("Alice", 20), 1234)); // Student
-        requests.add(new Request(new Person("Bob"), 2345)); // Teacher
-        requests.add(new Request(new Person("Charlie", 8), 1234)); // Student
-        requests.add(new Request(new Person("David", 6), 3456)); // Student
-        requests.add(new Request(new Person("Eve"), 3456)); // Teacher
-        requests.add(new Request(new Person("Frank", 7), 3456)); // Student
+        requests.add(new Request(new User("Alice", 20), 1234)); // Student
+        requests.add(new Request(new User("Bob"), 2345)); // Teacher
+        requests.add(new Request(new User("Charlie", 8), 1234)); // Student
+        requests.add(new Request(new User("David", 6), 3456)); // Student
+        requests.add(new Request(new User("Eve"), 3456)); // Teacher
+        requests.add(new Request(new User("Frank", 7), 3456)); // Student
 
         // Library service
         LibraryService libraryService = new LibraryServiceImpl();
@@ -32,16 +34,16 @@ public class LibraryApp {
     }
 
     public static class Request {
-        private Person person;
-        private int bookId;
+        private final User user;
+        private final int bookId;
 
-        public Request(Person person, int bookId) {
-            this.person = person;
+        public Request(User user, int bookId) {
+            this.user = user;
             this.bookId = bookId;
         }
 
-        public Person getPerson() {
-            return person;
+        public User getPerson() {
+            return user;
         }
 
         public int getBookId() {

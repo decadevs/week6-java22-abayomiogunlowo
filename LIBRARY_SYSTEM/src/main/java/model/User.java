@@ -1,19 +1,19 @@
 package model;
 
-public class Person {
+public class User {
     private String name;
     private Integer gradeLevel; // Null for teachers
     private boolean isTeacher;
 
     // Constructor for Student
-    public Person(String name, int gradeLevel) {
+    public User(String name, int gradeLevel) {
         this.name = name;
         this.gradeLevel = gradeLevel;
         this.isTeacher = false;
     }
 
     // Constructor for Teacher
-    public Person(String name) {
+    public User(String name) {
         this.name = name;
         this.gradeLevel = null;
         this.isTeacher = true;
